@@ -16,7 +16,7 @@ def clean_db():
  Base.metadata.drop_all(engine)
 def setup_trip():
  db=SessionLocal();tid=str(uuid4())
- t=Trip(id=tid,operator='Demo Travels',bus_name='AC Seater',origin='Hyderabad',destination='Bengaluru',departure_at=now()+timedelta(days=1),arrival_at=utcnow()+timedelta(days=1,hours=6),fare_paise=50000,seat_layout='2+2')
+ t=Trip(id=tid,operator='Demo Travels',bus_name='AC Seater',origin='Hyderabad',destination='Bengaluru',departure_at=now()+timedelta(days=1),arrival_at=now()+timedelta(days=1,hours=6),fare_paise=50000,seat_layout='2+2')
  seats=[Seat(id=str(uuid4()),trip_id=tid,seat_number=f'S{i}',seat_type='seater') for i in range(1,5)]
  db.add(t);db.add_all(seats);db.commit();ids=[s.id for s in seats];db.close();return tid,ids
 def make_booking(tid,seat_id,key='test-key-001'):
@@ -45,7 +45,7 @@ def test_admin_summary_requires_configured_key(monkeypatch):
  assert data['trips_total']>=1 and data['bookings_confirmed']>=1
 def test_admin_can_create_trip_and_generated_seats(monkeypatch):
  monkeypatch.setenv('BUSFLOW_ADMIN_API_KEY','test-admin-secret')
- payload={'operator':'Demo Travels','bus_name':'AC Seater','origin':'Hyderabad','destination':'Vijayawada','departure_at':(utcnow()+timedelta(days=2)).isoformat(),'arrival_at':(utcnow()+timedelta(days=2,hours=6)).isoformat(),'fare_paise':65000,'seat_layout':'2+1','seat_count':18}
+ payload={'operator':'Demo Travels','bus_name':'AC Seater','origin':'Hyderabad','destination':'Vijayawada','departure_at':(now()+timedelta(days=2)).isoformat(),'arrival_at':(now()+timedelta(days=2,hours=6)).isoformat(),'fare_paise':65000,'seat_layout':'2+1','seat_count':18}
  denied=client.post('/api/v1/admin/trips',json=payload);assert denied.status_code==401
  created=client.post('/api/v1/admin/trips',json=payload,headers={'X-Admin-Key':'test-admin-secret'})
  assert created.status_code==201
