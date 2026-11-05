@@ -30,3 +30,13 @@ def test_hold_confirm_and_conflict():
  assert c.status_code==200 and c.json()['seat_ids']==[ids[0]]
 def test_search_returns_seedable_trip_contract():
  response=client.get('/health');assert response.status_code==200 and response.json()['status']=='ok'
+
+def test_admin_summary_requires_configured_key(monkeypatch):
+ monkeypatch.setenv('BUSFLOW_ADMIN_API_KEY','test-admin-secret')
+ denied=client.get('/api/v1/admin/summary')
+ assert denied.status_code==401
+ accepted=client.get('/api/v1/admin/summary',headers={'X-Admin-Key':'test-admin-secret'})
+ assert accepted.status_code==200
+ data=accepted.json()
+ assert {'trips_total','seats_total','bookings_confirmed','active_holds','revenue_paise'}<=data.keys()
+ assert data['trips_total']>=1 and data['bookings_confirmed']>=1
