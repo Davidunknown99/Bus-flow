@@ -16,5 +16,7 @@ class TripCreate(BaseModel):
  seat_count:int=Field(default=40,ge=4,le=60)
 class HoldIn(BaseModel): trip_id:str;seat_ids:list[str]=Field(min_length=1,max_length=6);owner_token:str=Field(min_length=8,max_length=80)
 class PassengerIn(BaseModel): owner_token:str=Field(min_length=8,max_length=80);passenger_name:str=Field(min_length=2,max_length=120);email:str=Field(min_length=5,max_length=254);phone:str=Field(min_length=8,max_length=20)
-class CancelBookingIn(BaseModel):
+class CancelBookingIn(BaseModel): phone:str=Field(min_length=8,max_length=20)
+class BookingHistoryIn(BaseModel):
  phone:str=Field(min_length=8,max_length=20)
+ email:str=Field(min_length=5,max_length=254)
