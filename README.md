@@ -15,6 +15,7 @@ A full-stack college project demonstrating bus search, interactive seat selectio
 - Passenger details and PNR confirmation
 - Retrieve an existing booking by PNR
 - Protected admin operations summary (trip, seat, booking, active-hold and demo revenue metrics)
+- Protected trip/schedule creation with automatic seat provisioning and configurable seat layout
 - API documentation through Swagger UI
 
 > **Academic demo:** routes and fares are synthetic. Confirmation is simulated; no real payment or valid travel ticket is issued.
@@ -63,6 +64,14 @@ pytest
 - [Project report](docs/PROJECT_REPORT.md)
 - [System design](docs/SYSTEM_DESIGN.md)
 - [Demo guide](docs/DEMO_GUIDE.md)
+
+## Admin operations APIs
+
+- `GET /api/v1/admin/summary` returns aggregate operational metrics.
+- `GET /api/v1/admin/trips` lists scheduled trips.
+- `POST /api/v1/admin/trips` creates a trip and provisions its seats. The payload accepts operator, bus, origin, destination, timezone-aware departure/arrival, fare in paise, seat layout (`2+2`, `2+1`, or `1+1`) and seat count (4–60).
+
+All admin endpoints are disabled unless `BUSFLOW_ADMIN_API_KEY` is configured and require that value in the `X-Admin-Key` request header. Do not expose this shared-key demo mechanism as production authentication; use individual accounts, role-based authorization and secret management before deployment.
 
 ## Admin summary API
 
