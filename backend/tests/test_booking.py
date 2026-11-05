@@ -59,3 +59,21 @@ def test_admin_trip_rejects_naive_datetime(monkeypatch):
  payload={'operator':'Demo Travels','bus_name':'AC Seater','origin':'Hyderabad','destination':'Vijayawada','departure_at':'2026-12-01T10:00:00','arrival_at':'2026-12-01T16:00:00','fare_paise':65000,'seat_layout':'2+2','seat_count':20}
  response=client.post('/api/v1/admin/trips',json=payload,headers={'X-Admin-Key':'test-admin-secret'})
  assert response.status_code==422
+
+def test_booking_cancellation_releases_seats_and_is_idempotent():
+ tid,ids=setup_trip()
+ payload={'trip_id':tid,'seat_ids':[ids[0]],'owner_token':'owner-token-123'}
+ held=client.post('/api/v1/holds',json=payload,headers={'Idempotency-Key':'cancel-flow-hold'})
+ confirmed=client.post('/api/v1/holds/'+held.json()['id']+'/confirm',json={'owner_token':'owner-token-123','passenger_name':'Demo Person','email':'demo@example.com','phone':'9999999999'})
+ assert confirmed.status_code==200
+ pnr=confirmed.json()['pnr']
+ wrong=client.post('/api/v1/bookings/'+pnr+'/cancel',json={'phone':'8888888888'})
+ assert wrong.status_code==403
+ cancelled=client.post('/api/v1/bookings/'+pnr+'/cancel',json={'phone':'9999999999'})
+ assert cancelled.status_code==200 and cancelled.json()['status']=='cancelled'
+ seat_map=client.get('/api/v1/trips/'+tid+'/seats').json()
+ assert next(s for s in seat_map if s['id']==ids[0])['status']=='available'
+ replay=client.post('/api/v1/bookings/'+pnr+'/cancel',json={'phone':'9999999999'})
+ assert replay.status_code==200 and replay.json()['status']=='cancelled'
+ booking=client.get('/api/v1/bookings/'+pnr)
+ assert booking.status_code==200 and booking.json()['status']=='cancelled'
