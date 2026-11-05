@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.db import Base,engine,SessionLocal
 from app.models import Trip,Seat
-from app.booking import utcnow
+from app.booking import now
 client=TestClient(app)
 @pytest.fixture(autouse=True)
 def clean_db():
@@ -16,7 +16,7 @@ def clean_db():
  Base.metadata.drop_all(engine)
 def setup_trip():
  db=SessionLocal();tid=str(uuid4())
- t=Trip(id=tid,operator='Demo Travels',bus_name='AC Seater',origin='Hyderabad',destination='Bengaluru',departure_at=utcnow()+timedelta(days=1),arrival_at=utcnow()+timedelta(days=1,hours=6),fare_paise=50000,seat_layout='2+2')
+ t=Trip(id=tid,operator='Demo Travels',bus_name='AC Seater',origin='Hyderabad',destination='Bengaluru',departure_at=now()+timedelta(days=1),arrival_at=utcnow()+timedelta(days=1,hours=6),fare_paise=50000,seat_layout='2+2')
  seats=[Seat(id=str(uuid4()),trip_id=tid,seat_number=f'S{i}',seat_type='seater') for i in range(1,5)]
  db.add(t);db.add_all(seats);db.commit();ids=[s.id for s in seats];db.close();return tid,ids
 def make_booking(tid,seat_id,key='test-key-001'):
