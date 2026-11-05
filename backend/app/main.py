@@ -1,14 +1,14 @@
-import json,os
+import json,os,secrets
 from fastapi import FastAPI,Depends,Header,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from sqlalchemy import select,func
 from sqlalchemy.orm import Session
 from .db import Base,engine,get_db
 from .models import Trip,Seat,Hold,BookingSeat,Booking
 from .schemas import TripOut,HoldIn,PassengerIn
 from .booking import create_hold,confirm,utc,now
 Base.metadata.create_all(engine)
-app=FastAPI(title='BusFlow API',version='0.1.0',description='College project bus booking demo')
+app=FastAPI(title='BusFlow API',version='0.2.0',description='College project bus booking demo')
 app.add_middleware(CORSMiddleware,allow_origins=os.getenv('CORS_ORIGINS','http://localhost:3000').split(','),allow_methods=['*'],allow_headers=['*'])
 @app.get('/health')
 def health():return {'status':'ok','service':'busflow-api'}
@@ -39,3 +39,17 @@ def lookup(pnr:str,db:Session=Depends(get_db)):
  b=db.scalar(select(Booking).where(Booking.pnr==pnr.upper()))
  if not b:raise HTTPException(404,'Booking not found')
  return {'pnr':b.pnr,'status':b.status,'trip_id':b.trip_id,'passenger_name':b.passenger_name,'seat_ids':json.loads(b.seat_ids),'total_paise':b.total_paise,'created_at':b.created_at}
+@app.get('/api/v1/admin/summary')
+def admin_summary(x_admin_key:str|None=Header(default=None,alias='X-Admin-Key'),db:Session=Depends(get_db)):
+ expected=os.getenv('BUSFLOW_ADMIN_API_KEY')
+ if not expected:raise HTTPException(503,'Admin API is disabled until BUSFLOW_ADMIN_API_KEY is configured')
+ if not x_admin_key or not secrets.compare_digest(x_admin_key,expected):raise HTTPException(401,'Invalid admin credentials')
+ stamp=now()
+ active_holds=db.scalars(select(Hold).where(Hold.status=='held',Hold.expires_at>stamp)).all()
+ return {
+  'trips_total':db.scalar(select(func.count()).select_from(Trip)) or 0,
+  'seats_total':db.scalar(select(func.count()).select_from(Seat)) or 0,
+  'bookings_confirmed':db.scalar(select(func.count()).select_from(Booking).where(Booking.status=='confirmed')) or 0,
+  'active_holds':len(active_holds),
+  'revenue_paise':db.scalar(select(func.coalesce(func.sum(Booking.total_paise),0)).where(Booking.status=='confirmed')) or 0
+ }
