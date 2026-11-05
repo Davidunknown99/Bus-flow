@@ -40,3 +40,22 @@ def test_admin_summary_requires_configured_key(monkeypatch):
  data=accepted.json()
  assert {'trips_total','seats_total','bookings_confirmed','active_holds','revenue_paise'}<=data.keys()
  assert data['trips_total']>=1 and data['bookings_confirmed']>=1
+
+def test_admin_can_create_trip_and_generated_seats(monkeypatch):
+ monkeypatch.setenv('BUSFLOW_ADMIN_API_KEY','test-admin-secret')
+ payload={'operator':'Demo Travels','bus_name':'AC Seater','origin':'Hyderabad','destination':'Vijayawada','departure_at':(utcnow()+timedelta(days=2)).isoformat(),'arrival_at':(utcnow()+timedelta(days=2,hours=6)).isoformat(),'fare_paise':65000,'seat_layout':'2+1','seat_count':18}
+ denied=client.post('/api/v1/admin/trips',json=payload)
+ assert denied.status_code==401
+ created=client.post('/api/v1/admin/trips',json=payload,headers={'X-Admin-Key':'test-admin-secret'})
+ assert created.status_code==201
+ trip=created.json()
+ assert trip['seat_layout']=='2+1' and trip['origin']=='Hyderabad'
+ seat_response=client.get('/api/v1/trips/'+trip['id']+'/seats')
+ assert seat_response.status_code==200 and len(seat_response.json())==18
+ listing=client.get('/api/v1/admin/trips',headers={'X-Admin-Key':'test-admin-secret'})
+ assert any(item['id']==trip['id'] for item in listing.json())
+def test_admin_trip_rejects_naive_datetime(monkeypatch):
+ monkeypatch.setenv('BUSFLOW_ADMIN_API_KEY','test-admin-secret')
+ payload={'operator':'Demo Travels','bus_name':'AC Seater','origin':'Hyderabad','destination':'Vijayawada','departure_at':'2026-12-01T10:00:00','arrival_at':'2026-12-01T16:00:00','fare_paise':65000,'seat_layout':'2+2','seat_count':20}
+ response=client.post('/api/v1/admin/trips',json=payload,headers={'X-Admin-Key':'test-admin-secret'})
+ assert response.status_code==422
