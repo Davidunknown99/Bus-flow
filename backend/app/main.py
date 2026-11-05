@@ -7,10 +7,10 @@ from sqlalchemy import select,func
 from sqlalchemy.orm import Session
 from .db import Base,engine,get_db
 from .models import Trip,Seat,Hold,BookingSeat,Booking
-from .schemas import TripOut,TripCreate,HoldIn,PassengerIn,CancelBookingIn
+from .schemas import TripOut,TripCreate,HoldIn,PassengerIn,CancelBookingIn,BookingHistoryIn
 from .booking import create_hold,confirm,utc,now
 Base.metadata.create_all(engine)
-app=FastAPI(title='BusFlow API',version='0.3.0',description='College project bus booking demo')
+app=FastAPI(title='BusFlow API',version='0.4.0',description='College project bus booking demo')
 app.add_middleware(CORSMiddleware,allow_origins=os.getenv('CORS_ORIGINS','http://localhost:3000').split(','),allow_methods=['*'],allow_headers=['*'])
 def require_admin(x_admin_key:str|None):
  expected=os.getenv('BUSFLOW_ADMIN_API_KEY')
@@ -45,7 +45,11 @@ def lookup(pnr:str,db:Session=Depends(get_db)):
  b=db.scalar(select(Booking).where(Booking.pnr==pnr.upper()))
  if not b:raise HTTPException(404,'Booking not found')
  return {'pnr':b.pnr,'status':b.status,'trip_id':b.trip_id,'passenger_name':b.passenger_name,'seat_ids':json.loads(b.seat_ids),'total_paise':b.total_paise,'created_at':b.created_at}
-
+@app.post('/api/v1/bookings/history')
+def booking_history(data:BookingHistoryIn,db:Session=Depends(get_db)):
+ phone=data.phone.strip();email=data.email.strip().casefold()
+ records=db.scalars(select(Booking).where(Booking.phone==phone,func.lower(Booking.email)==email).order_by(Booking.created_at.desc()).limit(50)).all()
+ return [{'pnr':b.pnr,'status':b.status,'passenger_name':b.passenger_name,'origin':db.get(Trip,b.trip_id).origin if db.get(Trip,b.trip_id) else None,'destination':db.get(Trip,b.trip_id).destination if db.get(Trip,b.trip_id) else None,'departure_at':db.get(Trip,b.trip_id).departure_at if db.get(Trip,b.trip_id) else None,'seat_ids':json.loads(b.seat_ids),'total_paise':b.total_paise,'created_at':b.created_at} for b in records]
 @app.post('/api/v1/bookings/{pnr}/cancel')
 def cancel_booking(pnr:str,data:CancelBookingIn,db:Session=Depends(get_db)):
  b=db.scalar(select(Booking).where(Booking.pnr==pnr.upper()).with_for_update())
@@ -55,29 +59,24 @@ def cancel_booking(pnr:str,data:CancelBookingIn,db:Session=Depends(get_db)):
  if b.status!='confirmed':raise HTTPException(409,'Only confirmed bookings can be cancelled')
  released=json.loads(b.seat_ids)
  db.query(BookingSeat).filter(BookingSeat.booking_id==b.id).delete(synchronize_session=False)
- b.status='cancelled'
- db.commit()
+ b.status='cancelled';db.commit()
  return {'pnr':b.pnr,'status':b.status,'released_seats':released,'message':'Booking cancelled; seats are available again'}
 @app.get('/api/v1/admin/summary')
 def admin_summary(x_admin_key:str|None=Header(default=None,alias='X-Admin-Key'),db:Session=Depends(get_db)):
- require_admin(x_admin_key)
- stamp=now()
+ require_admin(x_admin_key);stamp=now()
  active_holds=db.scalars(select(Hold).where(Hold.status=='held',Hold.expires_at>stamp)).all()
  return {'trips_total':db.scalar(select(func.count()).select_from(Trip)) or 0,'seats_total':db.scalar(select(func.count()).select_from(Seat)) or 0,'bookings_confirmed':db.scalar(select(func.count()).select_from(Booking).where(Booking.status=='confirmed')) or 0,'active_holds':len(active_holds),'revenue_paise':db.scalar(select(func.coalesce(func.sum(Booking.total_paise),0)).where(Booking.status=='confirmed')) or 0}
 @app.post('/api/v1/admin/trips',status_code=201,response_model=TripOut)
 def admin_create_trip(data:TripCreate,x_admin_key:str|None=Header(default=None,alias='X-Admin-Key'),db:Session=Depends(get_db)):
  require_admin(x_admin_key)
  if data.origin.strip().casefold()==data.destination.strip().casefold():raise HTTPException(422,'Origin and destination must differ')
- departure=data.departure_at
- arrival=data.arrival_at
+ departure=data.departure_at;arrival=data.arrival_at
  if departure.tzinfo is None or arrival.tzinfo is None:raise HTTPException(422,'Departure and arrival must include timezone information')
  if arrival<=departure:raise HTTPException(422,'Arrival must be after departure')
  trip=Trip(id=str(uuid4()),operator=data.operator.strip(),bus_name=data.bus_name.strip(),origin=data.origin.strip(),destination=data.destination.strip(),departure_at=departure.astimezone(timezone.utc),arrival_at=arrival.astimezone(timezone.utc),fare_paise=data.fare_paise,seat_layout=data.seat_layout)
  db.add(trip)
- for index in range(1,data.seat_count+1):
-  db.add(Seat(id=str(uuid4()),trip_id=trip.id,seat_number=f'{index:02d}',seat_type='seater'))
- db.commit();db.refresh(trip)
- return trip
+ for index in range(1,data.seat_count+1):db.add(Seat(id=str(uuid4()),trip_id=trip.id,seat_number=f'{index:02d}',seat_type='seater'))
+ db.commit();db.refresh(trip);return trip
 @app.get('/api/v1/admin/trips',response_model=list[TripOut])
 def admin_list_trips(x_admin_key:str|None=Header(default=None,alias='X-Admin-Key'),db:Session=Depends(get_db)):
  require_admin(x_admin_key)
