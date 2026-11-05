@@ -14,6 +14,7 @@ A full-stack college project demonstrating bus search, interactive seat selectio
 - Hold up to six seats for five minutes
 - Passenger details and PNR confirmation
 - Retrieve an existing booking by PNR
+- Cancel a confirmed demo booking using its PNR and booking phone; cancelled seats return to availability
 - Protected admin operations summary (trip, seat, booking, active-hold and demo revenue metrics)
 - Protected trip/schedule creation with automatic seat provisioning and configurable seat layout
 - API documentation through Swagger UI
@@ -64,6 +65,10 @@ pytest
 - [Project report](docs/PROJECT_REPORT.md)
 - [System design](docs/SYSTEM_DESIGN.md)
 - [Demo guide](docs/DEMO_GUIDE.md)
+
+## Booking cancellation
+
+`POST /api/v1/bookings/{pnr}/cancel` accepts the phone number entered at booking time. It rejects mismatched phone numbers, marks a confirmed booking as cancelled, removes its active seat allocations and makes those seats available again. Repeating the cancellation is safe and returns the cancelled state.
 
 ## Admin operations APIs
 
