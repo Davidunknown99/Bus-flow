@@ -14,6 +14,7 @@ A full-stack college project demonstrating bus search, interactive seat selectio
 - Hold up to six seats for five minutes
 - Passenger details and PNR confirmation
 - Retrieve an existing booking by PNR
+- View booking history after matching the booking phone number and email
 - Cancel a confirmed demo booking using its PNR and booking phone; cancelled seats return to availability
 - Protected admin operations summary (trip, seat, booking, active-hold and demo revenue metrics)
 - Protected trip/schedule creation with automatic seat provisioning and configurable seat layout
@@ -87,3 +88,8 @@ The backend is authoritative for seat availability. It creates expiring holds an
 
 ## Future scope
 Individual authentication and roles, full operator/admin dashboard, cancellation and refunds, PDF/QR tickets, payment sandbox, email/SMS notifications, PostgreSQL migrations and deployment.
+
+
+## Booking history
+
+`POST /api/v1/bookings/history` accepts the phone number and email entered during booking and returns up to 50 matching bookings, newest first. The frontend includes a matching booking-history lookup. The endpoint returns an empty list when the supplied details do not match; it does not expose a phone-number search in the URL. This is a lightweight classroom-demo identity check, not production authentication.
