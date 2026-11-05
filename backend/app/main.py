@@ -7,7 +7,7 @@ from sqlalchemy import select,func
 from sqlalchemy.orm import Session
 from .db import Base,engine,get_db
 from .models import Trip,Seat,Hold,BookingSeat,Booking
-from .schemas import TripOut,TripCreate,HoldIn,PassengerIn
+from .schemas import TripOut,TripCreate,HoldIn,PassengerIn,CancelBookingIn
 from .booking import create_hold,confirm,utc,now
 Base.metadata.create_all(engine)
 app=FastAPI(title='BusFlow API',version='0.3.0',description='College project bus booking demo')
@@ -45,6 +45,19 @@ def lookup(pnr:str,db:Session=Depends(get_db)):
  b=db.scalar(select(Booking).where(Booking.pnr==pnr.upper()))
  if not b:raise HTTPException(404,'Booking not found')
  return {'pnr':b.pnr,'status':b.status,'trip_id':b.trip_id,'passenger_name':b.passenger_name,'seat_ids':json.loads(b.seat_ids),'total_paise':b.total_paise,'created_at':b.created_at}
+
+@app.post('/api/v1/bookings/{pnr}/cancel')
+def cancel_booking(pnr:str,data:CancelBookingIn,db:Session=Depends(get_db)):
+ b=db.scalar(select(Booking).where(Booking.pnr==pnr.upper()).with_for_update())
+ if not b:raise HTTPException(404,'Booking not found')
+ if b.phone.strip()!=data.phone.strip():raise HTTPException(403,'Booking phone verification failed')
+ if b.status=='cancelled':return {'pnr':b.pnr,'status':'cancelled','released_seats':json.loads(b.seat_ids),'message':'Booking was already cancelled'}
+ if b.status!='confirmed':raise HTTPException(409,'Only confirmed bookings can be cancelled')
+ released=json.loads(b.seat_ids)
+ db.query(BookingSeat).filter(BookingSeat.booking_id==b.id).delete(synchronize_session=False)
+ b.status='cancelled'
+ db.commit()
+ return {'pnr':b.pnr,'status':b.status,'released_seats':released,'message':'Booking cancelled; seats are available again'}
 @app.get('/api/v1/admin/summary')
 def admin_summary(x_admin_key:str|None=Header(default=None,alias='X-Admin-Key'),db:Session=Depends(get_db)):
  require_admin(x_admin_key)
