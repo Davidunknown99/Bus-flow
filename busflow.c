@@ -167,8 +167,8 @@ static void search_buses(void) {
     read_text("Enter destination city: ", destination, sizeof destination);
     puts("\nMATCHING BUSES");
     for (i = 0; i < BUS_COUNT; i++) {
-        if (equals_ignore_case(origin, buses[i].origin) == 0 &&
-            equals_ignore_case(destination, buses[i].destination) == 0) {
+        if (equals_ignore_case(origin, buses[i].origin) &&
+            equals_ignore_case(destination, buses[i].destination)) {
             printf("%d. %s | %s | %s to %s | %s - %s | Rs.%d\n",
                    buses[i].id, buses[i].operator_name, buses[i].bus_name,
                    buses[i].origin, buses[i].destination, buses[i].departure,
