@@ -186,7 +186,7 @@ static void show_seats(int bus_id) {
     puts("       LEFT SIDE       AISLE       RIGHT SIDE");
     for (seat = 1; seat <= SEATS_PER_BUS; seat += 4) {
         int a = seat, b = seat + 1, c = seat + 2, d = seat + 3;
-        printf("       [%02d]%s [%02d]       ||       [%02d]%s [%02d]\n",
+        printf("       [%02d]%s [%02d]%s       ||       [%02d]%s [%02d]%s\n",
                a, seat_is_booked(bus_id, a) ? "X" : " ",
                b, seat_is_booked(bus_id, b) ? "X" : " ",
                c, seat_is_booked(bus_id, c) ? "X" : " ",
