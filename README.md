@@ -1,95 +1,85 @@
-# BusFlow — Bus Ticket Booking & Seat Allocation
+# BusFlow — C11 Console Bus Booking System
 
-A full-stack college project demonstrating bus search, interactive seat selection, temporary seat holds, passenger details and PNR confirmation.
-
-## Stack
-- **Frontend:** Next.js, React, TypeScript, Tailwind CSS
-- **Backend:** FastAPI, SQLAlchemy, SQLite
-- **Tests:** Pytest + FastAPI TestClient
+BusFlow is a simple college-project bus booking application written entirely in **standard C11**. It runs in a terminal and demonstrates basic menu-driven interaction, structures, arrays, functions, input validation, and file handling.
 
 ## Features
-- Search buses by origin and destination
-- View schedules, operators, fares and bus layouts
-- Interactive seat map with available / held / booked states
-- Hold up to six seats for five minutes
-- Passenger details and PNR confirmation
-- Retrieve an existing booking by PNR
-- View booking history after matching the booking phone number and email
-- Cancel a confirmed demo booking using its PNR and booking phone; cancelled seats return to availability
-- Protected admin operations summary (trip, seat, booking, active-hold and demo revenue metrics)
-- Protected trip/schedule creation with automatic seat provisioning and configurable seat layout
-- API documentation through Swagger UI
 
-> **Academic demo:** routes and fares are synthetic. Confirmation is simulated; no real payment or valid travel ticket is issued.
+- Display sample bus routes, operators, timings, and fares
+- Search buses by source and destination (case-insensitive)
+- View a 2+2 seat layout and live seat availability
+- Book one available seat with passenger name and mobile number
+- Generate a demo PNR and display a booking confirmation
+- Find an active booking using its PNR
+- Cancel a booking after checking the booking mobile number
+- View active booking history
+- Save bookings between runs using a local binary data file
 
-## Run locally
+## Technology
 
-### 1. Backend
-Use Python 3.10+.
+- Language: ISO C11
+- Standard library only: stdio.h, stdlib.h, string.h, ctype.h, errno.h, time.h
+- Compiler: GCC or another C11-compatible compiler
+- Storage: local file, busflow_bookings.dat
 
-```bash
-cd backend
-python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m app.seed
-# Optional: enable the protected admin summary endpoint
-# Set a strong secret in your environment before starting the API.
-# macOS/Linux: export BUSFLOW_ADMIN_API_KEY='replace-with-a-long-random-secret'
-# PowerShell: $env:BUSFLOW_ADMIN_API_KEY='replace-with-a-long-random-secret'
-uvicorn app.main:app --reload
-```
+There is no Python, JavaScript, TypeScript, database server, web framework, or third-party library.
 
-Backend: http://localhost:8000  
-API docs: http://localhost:8000/docs
+## Compile and run
 
-### 2. Frontend
-In a second terminal:
+### Linux
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+~~~bash
+gcc -std=c11 -Wall -Wextra -pedantic -O2 busflow.c -o busflow
+./busflow
+~~~
 
-Open http://localhost:3000. The frontend expects the API at http://localhost:8000. To change it, set `NEXT_PUBLIC_API_URL`.
+### Windows (MinGW GCC)
 
-### 3. Run backend tests
-From the `backend` directory:
+~~~bash
+gcc -std=c11 -Wall -Wextra -pedantic -O2 busflow.c -o busflow.exe
+busflow.exe
+~~~
 
-```bash
-pytest
-```
+### macOS
 
-## Project documentation
-- [Project report](docs/PROJECT_REPORT.md)
-- [System design](docs/SYSTEM_DESIGN.md)
-- [Demo guide](docs/DEMO_GUIDE.md)
+~~~bash
+clang -std=c11 -Wall -Wextra -pedantic -O2 busflow.c -o busflow
+./busflow
+~~~
 
-## Booking cancellation
+The program creates busflow_bookings.dat in its current working directory when the first booking is saved. Keep that file if you want booking records to remain available the next time you run the program.
 
-`POST /api/v1/bookings/{pnr}/cancel` accepts the phone number entered at booking time. It rejects mismatched phone numbers, marks a confirmed booking as cancelled, removes its active seat allocations and makes those seats available again. Repeating the cancellation is safe and returns the cancelled state.
+## Menu
 
-## Admin operations APIs
+1. Display all buses
+2. Search buses by route
+3. View seat availability
+4. Book a seat
+5. Find booking using PNR
+6. Cancel a booking
+7. View booking history
+0. Exit
 
-- `GET /api/v1/admin/summary` returns aggregate operational metrics.
-- `GET /api/v1/admin/trips` lists scheduled trips.
-- `POST /api/v1/admin/trips` creates a trip and provisions its seats. The payload accepts operator, bus, origin, destination, timezone-aware departure/arrival, fare in paise, seat layout (`2+2`, `2+1`, or `1+1`) and seat count (4–60).
+## Sample routes
 
-All admin endpoints are disabled unless `BUSFLOW_ADMIN_API_KEY` is configured and require that value in the `X-Admin-Key` request header. Do not expose this shared-key demo mechanism as production authentication; use individual accounts, role-based authorization and secret management before deployment.
+| Operator | Route | Departure | Arrival | Fare |
+|---|---|---:|---:|---:|
+| Metro Travels | Hyderabad – Bengaluru | 21:00 | 06:00 | ₹1,499 |
+| Orange Express | Hyderabad – Vijayawada | 07:00 | 13:00 | ₹799 |
+| Kaveri Lines | Hyderabad – Chennai | 22:00 | 08:00 | ₹1,299 |
+| Deccan Roadways | Hyderabad – Warangal | 08:30 | 11:30 | ₹399 |
 
-## Admin summary API
+## Project notes
 
-`GET /api/v1/admin/summary` returns aggregate operational metrics. It is disabled unless `BUSFLOW_ADMIN_API_KEY` is configured, and requires that value in the `X-Admin-Key` request header. Do not expose this shared-key demo mechanism as production authentication; use individual accounts, role-based authorization and secret management before deployment.
+- Routes and fares are synthetic sample data.
+- A booking is a classroom demonstration only. No payment is collected and no real travel ticket is issued.
+- The booking file stores C structures in binary form. Use the same program/compiler environment when continuing with an existing data file.
+- To reset the demonstration, close the program and delete busflow_bookings.dat.
 
-## Important design note
-The backend is authoritative for seat availability. It creates expiring holds and confirms a booking in a database transaction. A unique constraint on `(trip_id, seat_id)` in confirmed bookings is a final safeguard against duplicate allocation. SQLite is suitable for the local classroom demonstration; production deployment should use PostgreSQL and stronger concurrency controls.
+## Repository structure
 
-## Future scope
-Individual authentication and roles, full operator/admin dashboard, cancellation and refunds, PDF/QR tickets, payment sandbox, email/SMS notifications, PostgreSQL migrations and deployment.
-
-
-## Booking history
-
-`POST /api/v1/bookings/history` accepts the phone number and email entered during booking and returns up to 50 matching bookings, newest first. The frontend includes a matching booking-history lookup. The endpoint returns an empty list when the supplied details do not match; it does not expose a phone-number search in the URL. This is a lightweight classroom-demo identity check, not production authentication.
+~~~text
+Bus-flow/
+├── busflow.c
+├── README.md
+└── LICENSE
+~~~
