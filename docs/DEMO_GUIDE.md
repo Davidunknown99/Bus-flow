@@ -1,21 +1,37 @@
-# Demo Guide
+# BusFlow C11 Demo Guide
 
-1. Start the backend and run `python -m app.seed`.
-2. Start the frontend with `npm run dev`.
-3. Search a sample route, such as Hyderabad to Bengaluru.
-4. Select a bus service and choose available seats.
-5. Enter passenger details and continue.
-6. Complete the clearly labelled simulated checkout.
-7. Note the generated booking reference.
-8. Open http://127.0.0.1:8000/docs to demonstrate the APIs.
+## 1. Compile
 
-All service data is synthetic. This demo does not process real payments or issue valid travel tickets.
+Linux/macOS:
 
-## Find previous bookings
+~~~bash
+gcc -std=c11 -Wall -Wextra -pedantic -O2 busflow.c -o busflow
+./busflow
+~~~
 
-1. Scroll to the **Find your booking** section.
-2. Enter the phone number and email address used at booking time.
-3. Select **Show history** to display matching PNRs, trip routes, seats, status and fare.
-4. Use the PNR search above to inspect one booking or the cancellation control to cancel it.
+Windows with MinGW:
 
-The history lookup matches both contact fields and returns up to 50 recent records. It is a demonstration feature, not a substitute for customer authentication.
+~~~bash
+gcc -std=c11 -Wall -Wextra -pedantic -O2 busflow.c -o busflow.exe
+busflow.exe
+~~~
+
+## 2. Demonstrate the application
+
+1. Choose **1** to display all sample buses.
+2. Choose **2** and search Hyderabad to Bengaluru.
+3. Choose **3** to view the seat map for a bus. X marks a booked seat.
+4. Choose **4**, select a bus and an available seat, then enter a passenger name and mobile number.
+5. Show the generated PNR and booking confirmation.
+6. Choose **5** and enter that PNR to retrieve the booking.
+7. Choose **7** to show active booking history.
+8. Choose **6** to cancel the booking using its PNR and the same mobile number.
+9. Choose **3** again to show that the cancelled seat is available.
+
+## 3. Persistence
+
+Bookings are saved in busflow_bookings.dat in the current working directory. Exit and run the program again to demonstrate that active bookings remain saved.
+
+## Academic demo notice
+
+All routes and fares are sample data. No payment is processed and no real travel ticket is issued.
