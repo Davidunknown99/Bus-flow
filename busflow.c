@@ -89,6 +89,14 @@ static void pause_screen(void) {
     (void)fgets(line, sizeof line, stdin);
 }
 
+static int equals_ignore_case(const char *a, const char *b) {
+    while (*a && *b) {
+        if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) return 0;
+        a++; b++;
+    }
+    return *a == '\0' && *b == '\0';
+}
+
 static int bus_index(int id) {
     int i;
     for (i = 0; i < BUS_COUNT; i++) if (buses[i].id == id) return i;
@@ -159,8 +167,8 @@ static void search_buses(void) {
     read_text("Enter destination city: ", destination, sizeof destination);
     puts("\nMATCHING BUSES");
     for (i = 0; i < BUS_COUNT; i++) {
-        if (strcasecmp(origin, buses[i].origin) == 0 &&
-            strcasecmp(destination, buses[i].destination) == 0) {
+        if (equals_ignore_case(origin, buses[i].origin) == 0 &&
+            equals_ignore_case(destination, buses[i].destination) == 0) {
             printf("%d. %s | %s | %s to %s | %s - %s | Rs.%d\n",
                    buses[i].id, buses[i].operator_name, buses[i].bus_name,
                    buses[i].origin, buses[i].destination, buses[i].departure,
