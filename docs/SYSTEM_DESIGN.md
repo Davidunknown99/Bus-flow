@@ -1,25 +1,55 @@
-# System Design
+# BusFlow C11 System Design
 
-```text
-Passenger UI (Next.js) -> FastAPI REST API -> SQLAlchemy -> SQLite
-```
+## Architecture
 
-## Entities
-Trip: operator, bus, route, times, fare and layout. Seat: per-trip seat identity. Hold: owner, seat IDs, idempotency key, expiry and state. Booking: PNR and passenger details. BookingSeat: confirmed trip-seat association.
+~~~text
+Terminal menu
+    |
+    v
+Input and menu functions
+    |
+    +--> Bus listing and route search (static Bus array)
+    |
+    +--> Seat availability (active Booking records)
+    |
+    +--> Booking / PNR / cancellation
+    |
+    v
+Booking array in memory
+    |
+    v
+busflow_bookings.dat (C standard file I/O)
+~~~
 
-## Seat state machine
-AVAILABLE -> HELD -> BOOKED; HELD -> AVAILABLE after expiry or release.
+## Data structures
 
-## Invariants
-- Frontend status is advisory; backend writes determine allocation.
-- Holds are all-or-nothing for the submitted seat set.
-- Server time controls expiry.
-- Reusing an idempotency key with a different payload is a conflict.
-- Confirmation validates hold ownership and expiry before writing booking plus seat rows in one transaction.
-- Unique (trip_id, seat_id) constraint prevents duplicate confirmed assignment.
+### Bus
 
-## API
-GET /health; GET /api/v1/trips; GET /api/v1/trips/{id}/seats; POST /api/v1/holds; POST /api/v1/holds/{id}/confirm; GET /api/v1/bookings/{pnr}.
+Stores bus ID, operator, bus name, origin, destination, departure time, arrival time, and fare.
 
-## Production extension
-Use PostgreSQL, migrations, authentication/authorization, rate limits, hosted payment checkout with signed webhook verification, monitoring, audit logs, privacy controls, backups and load tests. SQLite and simulated checkout are for a local college demo.
+### Booking
+
+Stores active/cancelled status, PNR, bus ID, seat number, passenger name, phone number, and fare.
+
+## Booking flow
+
+1. User chooses a bus.
+2. The application displays its 24-seat layout.
+3. User selects an available seat.
+4. Passenger name and mobile number are collected.
+5. A PNR is generated and the booking is saved to the local data file.
+
+## Cancellation flow
+
+1. User enters a PNR.
+2. The program finds the matching active booking.
+3. The booking mobile number is checked.
+4. The booking is marked inactive and the data file is rewritten.
+5. The seat becomes available because only active bookings occupy seats.
+
+## Constraints and limitations
+
+- One local process is intended to use the data file at a time.
+- Sample routes and fares are compiled into the program.
+- The binary file stores C structures and should be used with a compatible build.
+- This is a classroom prototype, not a production ticketing service.
