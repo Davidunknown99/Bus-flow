@@ -1,10 +1,14 @@
-node_modules/
-.next/
-.venv/
-__pycache__/
-.pytest_cache/
-.env
-.env.*
-!.env.example
-*.sqlite3
+# Local C build outputs
+busflow
+busflow.exe
+*.o
+*.obj
+*.exe
+
+# Booking demo data
+busflow_bookings.dat
+
+# OS/editor files
 .DS_Store
+Thumbs.db
+.vscode/
