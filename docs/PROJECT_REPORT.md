@@ -1,33 +1,49 @@
 # BusFlow Project Report
 
 ## Abstract
-BusFlow is a web-based bus ticket booking and seat allocation system. It brings bus search, schedule comparison, seat selection, passenger details and confirmation into one interface. The backend validates seat holds and prevents duplicate confirmed allocations.
+
+BusFlow is a menu-driven bus booking application implemented entirely in standard C11. It demonstrates route search, seat availability, passenger booking, PNR lookup, cancellation, and persistent booking history through a simple terminal interface.
 
 ## Problem statement
-Fragmented booking workflows make route comparison and seat availability unclear. Manual allocation can cause duplicate assignments. BusFlow demonstrates a centralized workflow with database-backed validation.
+
+A basic booking demonstration should let a user inspect sample bus routes, choose a seat, record passenger details, and retrieve or cancel a booking without requiring a web server or database setup.
 
 ## Objectives
-1. Search sample bus services by route.
-2. Display operator, timings, fare and seat availability.
-3. Let passengers select seats interactively.
-4. Prevent duplicate confirmed seat allocation.
-5. Generate a booking reference and support lookup.
-6. Demonstrate operator-side service and occupancy information.
 
-## Modules
-Passenger search; trip listing; seat allocation; temporary seat holds; passenger details; confirmation; ticket lookup; operator dashboard concept.
+1. Display sample buses, routes, timings, and fares.
+2. Search routes by source and destination.
+3. Display a 2+2 seat layout and mark booked seats.
+4. Book an available seat and collect passenger details.
+5. Generate a booking reference (PNR).
+6. Find and cancel bookings.
+7. Preserve booking records between program runs.
 
 ## Technology
-Next.js, React and TypeScript; FastAPI; SQLAlchemy; SQLite; Pytest.
+
+- ISO C11
+- GCC or another C11-compatible compiler
+- C standard library only
+- Structures, arrays, functions, string handling, and file I/O
+- Local binary file for booking persistence
+
+## Modules
+
+- Bus listing and route search
+- Seat availability display
+- Seat booking and confirmation
+- PNR lookup
+- Booking cancellation with phone-number check
+- Active booking history
+- File-based save and load
 
 ## Methodology
-The browser displays seat status, but the backend is authoritative. The API creates short-lived holds, checks expiry on confirmation, and writes booking plus seat assignments in one transaction. A unique database constraint prevents a second confirmed booking for the same trip-seat pair.
+
+The program stores sample bus information in a constant array of structures. Booking records are held in an array of structures. A seat is unavailable when an active booking exists for the same bus and seat number. Each successful booking is written to busflow_bookings.dat. Cancellation changes the booking status and saves the updated records, making the seat available again.
 
 ## Limitations
-The schedules and prices are synthetic. Payment is simulated. Authentication, real inventory, notifications, production deployment and refund workflows are outside the MVP.
 
-## Future scope
-Add user/operator login, PostgreSQL and migrations, PDF/QR tickets, payment sandbox, cancellation/refunds, notifications, live GPS and operator inventory integration.
+The bus routes and fares are synthetic. The program is intended for a local classroom demonstration. It does not process payments, issue valid travel tickets, or provide multi-user network access. Binary data files are intended to be reused with a compatible build of this program.
 
 ## Conclusion
-BusFlow demonstrates a booking workflow and practical concepts in UI design, REST APIs, relational modelling and transaction-safe seat allocation.
+
+BusFlow demonstrates core C programming concepts in a practical booking scenario while keeping compilation and execution straightforward.
