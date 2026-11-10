@@ -68,7 +68,11 @@ The program creates busflow_bookings.dat in its current working directory when t
 | Kaveri Lines | Hyderabad – Chennai | 22:00 | 08:00 | ₹1,299 |
 | Deccan Roadways | Hyderabad – Warangal | 08:30 | 11:30 | ₹399 |
 
-## Project report\n\nA CPDS laboratory report template following the supplied reference structure is available at [docs/CPDS_PROJECT_REPORT.md](docs/CPDS_PROJECT_REPORT.md). Replace all bracketed identity and faculty fields, and insert screenshots and the complete current source listing before submission.\n\n## Project notes
+## Project report
+
+A CPDS laboratory report template following the supplied reference structure is available at [docs/CPDS_PROJECT_REPORT.md](docs/CPDS_PROJECT_REPORT.md). Replace all bracketed identity and faculty fields, and insert screenshots and the complete current source listing before submission.
+
+## Project notes
 
 - Routes and fares are synthetic sample data.
 - A booking is a classroom demonstration only. No payment is collected and no real travel ticket is issued.
