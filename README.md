@@ -81,5 +81,10 @@ The program creates busflow_bookings.dat in its current working directory when t
 Bus-flow/
 ├── busflow.c
 ├── README.md
-└── LICENSE
+├── LICENSE
+└── docs/
+    ├── CPDS_PROJECT_REPORT.md
+    ├── DEMO_GUIDE.md
+    ├── PROJECT_REPORT.md
+    └── SYSTEM_DESIGN.md
 ~~~
